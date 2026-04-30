@@ -24,4 +24,4 @@ jobs:
       - name: Test app response
         run: |
           sleep 5
-          curl -I http://localhost:8000
+          curl -I http://localhost:8000 | grep "200"
