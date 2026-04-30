@@ -18,8 +18,16 @@ jobs:
       - name: Build Docker image
         run: docker build -t django-app .
 
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: django-app
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
       - name: Run container
         run: docker run -d -p 8000:8000 -e DJANGO_SECRET_KEY=dev-secret-key django-app
 
-      - name: Test app response (custom action)
+      - name: Test app response using custom action
         uses: ./.github/actions/http-check
