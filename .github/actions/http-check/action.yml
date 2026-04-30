@@ -1,0 +1,19 @@
+name: "HTTP 200 Check"
+description: "Checks if the application returns HTTP 200"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Wait for app
+      shell: bash
+      run: sleep 5
+
+    - name: Check HTTP response
+      shell: bash
+      run: |
+        status=$(curl -o /dev/null -s -w "%{http_code}" http://localhost:8000)
+        echo "Status: $status"
+        if [ "$status" -ne 200 ]; then
+          echo "App did not return 200"
+          exit 1
+        fi

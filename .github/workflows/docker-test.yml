@@ -21,7 +21,5 @@ jobs:
       - name: Run container
         run: docker run -d -p 8000:8000 -e DJANGO_SECRET_KEY=dev-secret-key django-app
 
-      - name: Test app response
-        run: |
-          sleep 5
-          curl -I http://localhost:8000
+      - name: Test app response (custom action)
+        uses: ./.github/actions/http-check
