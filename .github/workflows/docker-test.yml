@@ -19,7 +19,7 @@ jobs:
         run: docker build -t django-app .
 
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: django-app
           format: table
