@@ -1,0 +1,59 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      TF_VAR_ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      TF_VAR_ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      TF_VAR_DJANGO_SECRET_KEY_PROD: ${{ secrets.DJANGO_SECRET_KEY_PROD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Stage 1 Init
+        run: terraform -chdir=terraform/stage1 init
+
+      - name: Terraform Stage 1 Apply
+        run: terraform -chdir=terraform/stage1 apply -auto-approve
+
+      - name: Docker login to ACR
+        run: az acr login --name acrnsungacmp2400
+
+      - name: Build Docker image
+        run: docker build -t acrnsungacmp2400.azurecr.io/final:latest .
+
+      - name: Push Docker image
+        run: docker push acrnsungacmp2400.azurecr.io/final:latest
+
+      - name: Terraform Stage 2 Init
+        run: terraform -chdir=terraform/stage2 init
+
+      - name: Terraform Stage 2 Apply
+        run: terraform -chdir=terraform/stage2 apply -auto-approve
+
+      - name: Test deployed app
+        run: |
+          sleep 30
+          curl -I http://acmp-nsung-instance.centralus.azurecontainer.io:8000
